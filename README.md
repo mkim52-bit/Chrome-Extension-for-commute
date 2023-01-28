@@ -3,8 +3,7 @@ A chrome extension that lets you highlight an address and show the directions ho
 
 # How to setup
 * Download the repository
-* Go to Manage Extensions
-* Turn on developer mode
+* Go to Manage Extensions and turn on developer mode
 * "Load unpack" the file
 * Rightclick the extension for options to set your address
 * Highlight an address and rightclick to search and view on extension
