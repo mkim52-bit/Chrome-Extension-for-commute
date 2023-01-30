@@ -3,6 +3,9 @@
   "description": "Highlight text to see destination",
   "version": "1.0",
   "manifest_version": 2,
+  "icons":{
+    "32": "searching.png"
+  },
   "permissions": ["<all_urls>",
   "storage",
   "notifications",
@@ -13,7 +16,8 @@
   },
   "options_page": "options.html",
   "browser_action": 
-   { "default_popup": "popup.html" },
+   {"default_icon":"directions.png", 
+    "default_popup": "popup.html" },
    "content_security_policy": "script-src 'self' https://polyfill.io/v3/ https://maps.googleapis.com; object-src 'self'",
    "content_scripts": [{
     "matches": ["http://*/*", "https://*/*", "<all_urls>"],
