@@ -63,7 +63,11 @@ function calculateDate(){
 
 function calculateAndDisplayRoute(directionsService, directionsRenderer, swapDirections) {
   const selectedMode = document.getElementById("mode").value;
-  chrome.storage.sync.get(["work", "home"], function(obj){
+  chrome.storage.sync.get(["home", "work"], function(obj){
+    if(obj.home === obj.work){
+      window.alert("Home and work cannot be the same")
+      return
+    }
     if(swapDirections === false){
      
       directionsService

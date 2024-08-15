@@ -1,16 +1,16 @@
-chrome.storage.sync.get("home", function(obj){
-    if(obj.home){
-        document.getElementById("title").innerHTML = "Current home is " + obj.home
+chrome.storage.sync.get("work", function(obj){
+    if(obj.work){
+        document.getElementById("title").innerHTML = "Current Work is " + obj.work
     }
     
 })
 
 let submit = document.getElementById("submit")
 let title = document.getElementById("title").innerHTML
-let home = ""
+let work = ""
 submit.onclick = function(){
-    home = document.getElementById("home").value
-    chrome.storage.sync.set({"home":home})
-    document.getElementById("title").innerHTML = "Current home is " + home
+    work = document.getElementById("work").value
+    chrome.storage.sync.set({"work":work})
+    document.getElementById("title").innerHTML = "Current work is " + work
     
 }
