@@ -30,26 +30,25 @@ async function isValidAddress(address) {
 
         const data = await response.json(); // Parse the response as JSON
 
-        if (data.result.verdict.addressComplete && data.result.verdict.addressComplete === true) {
-            return true;
+        if (data.result.verdict.validationGranularity === "PREMISE") {
+            
+            return data.result.geocode.location
         }
 
-        return false;
+        window.alert("Invalid address")
+        return undefined
     } catch (error) {
         console.error('Error validating address:', error);
-        return false;
+        return undefined
     }
 }
 
 // When the context menu item is clicked
 chrome.contextMenus.onClicked.addListener(async function(clickData) {
     if (clickData.menuItemId === "search" && clickData.selectionText) {
-        const isValid = await isValidAddress(clickData.selectionText);
-        if (isValid) {
-            console.log("Set home at " + clickData.selectionText);
-            chrome.storage.sync.set({"home": clickData.selectionText});
-        } else {
-            window.alert("Invalid address")
+        const homeObj = await isValidAddress(clickData.selectionText);
+        if(homeObj){
+            chrome.storage.local.set({"home": homeObj})
         }
     }
 });

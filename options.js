@@ -1,3 +1,39 @@
+async function isValidAddress(address) {
+    const url = `https://addressvalidation.googleapis.com/v1:validateAddress?key=AIzaSyD6epNRNRon1Iri-JaV_SsFl8t4WCoKpzQ`;
+
+    // Construct the payload for the POST request
+    const payload = {
+        address: {
+            regionCode: "US",
+            addressLines: [address]
+        }
+    };
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json(); // Parse the response as JSON
+
+        if (data.result.verdict.validationGranularity === "PREMISE") {
+            
+            return data.result.geocode.location
+        }
+
+        window.alert("Invalid address")
+        return undefined
+    } catch (error) {
+        console.error('Error validating address:', error);
+        return undefined
+    }
+}
+
 chrome.storage.sync.get("work", function(obj){
     if(obj.work){
         document.getElementById("title").innerHTML = "Current Work is " + obj.work
@@ -8,9 +44,14 @@ chrome.storage.sync.get("work", function(obj){
 let submit = document.getElementById("submit")
 let title = document.getElementById("title").innerHTML
 let work = ""
-submit.onclick = function(){
+submit.onclick = async function(){
     work = document.getElementById("work").value
-    chrome.storage.sync.set({"work":work})
+
+    const workObj = await isValidAddress(work);
+        if(workObj){
+            chrome.storage.local.set({"work": workObj})
+        }
+
     document.getElementById("title").innerHTML = "Current work is " + work
-    
 }
+
