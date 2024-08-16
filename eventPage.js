@@ -30,7 +30,7 @@ async function isValidAddress(address) {
 
         const data = await response.json(); // Parse the response as JSON
 
-        if (data.result.verdict.validationGranularity === "PREMISE") {
+        if (data.result.verdict.validationGranularity === "PREMISE" || "addressComplete" in data.result.verdict) {
             
             return data.result.geocode.location
         }

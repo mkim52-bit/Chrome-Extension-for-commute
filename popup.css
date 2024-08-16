@@ -12,8 +12,5 @@
  * Optional: Makes the sample page fill the window. 
  */
 html {
-  height: 600px;
-  width: 600px;
-  
-
+  width: 500px;
 }

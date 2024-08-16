@@ -2,12 +2,13 @@
   <head>
     <title>Travel Modes in Directions</title>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
-
     <link rel="stylesheet" type="text/css" href="popup.css" />
-    <script type="module" src="popup.js"></script>
+    <script type="module" src="popup.js"></script>     
   </head>
   <body>
-    <div id="floating-panel">
+<div class="Directions-container">
+  <div id="floating-panel">
+    <div class="Mode-container">
       <b>Mode of Travel: </b>
       <select id="mode">
         <option value="TRANSIT">Transit</option>
@@ -15,15 +16,21 @@
         <option value="WALKING">Walking</option>
         <option value="BICYCLING">Bicycling</option>
       </select>
-      <button type="button" id="swap">Swap Directions</button>
+    </div>
+    <div class="Departure-container">
       <label for="appt">Departure time:</label>
       <input type="time" id="time" value="08:00" required step="3600"/>
     </div>
-    
-    <div id="container">
-      <div id="map"></div>
-      <div id="sidebar"></div>
+    <div class="Swap-Btn-container">
+      <button type="button" id="swap">Swap Directions</button>
     </div>
+  </div>
+  
+  <div id="Map-container">
+    <div id="map"></div>
+    <div id="sidebar"></div>
+  </div>
+</div>
 
     <!-- 
       The `defer` attribute causes the callback to execute after the full HTML
@@ -31,9 +38,8 @@
       and consistent behavior across browsers, consider loading using Promises
       with https://www.npmjs.com/package/@googlemaps/js-api-loader.
       -->
-    <script
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD6epNRNRon1Iri-JaV_SsFl8t4WCoKpzQ&callback=initMap&v=weekly"
-      defer
-    ></script>
+    <script async
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD6epNRNRon1Iri-JaV_SsFl8t4WCoKpzQ&loading=async&libraries=places&callback=initMap">
+    </script>
   </body>
 </html>

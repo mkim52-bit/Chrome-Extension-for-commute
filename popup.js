@@ -36,17 +36,6 @@ function initMap() {
     calculateAndDisplayRoute(directionsService, directionsRenderer, swapDirections);
   });
 
-  // // Add nearby search functionality
-  // document.getElementById("searchNearby").addEventListener("click", () => {
-  //   const searchTerm = document.getElementById("searchTerm").value || 'grocery store';
-  //   chrome.storage.local.get(["home"], function (obj) {
-  //     if (obj.home) {
-  //       performNearbySearch(map, searchTerm, obj.home);
-  //     } else {
-  //       window.alert("Home location is not set");
-  //     }
-  //   });
-  // });
 }
 
 // Calculates departure time
@@ -79,112 +68,28 @@ function calculateAndDisplayRoute(directionsService, directionsRenderer, swapDir
       return;
     }
 
-    console.log(obj.home)
-    console.log(obj.work)
-
     const homeLatLng = new google.maps.LatLng(obj.home.latitude, obj.home.longitude);
     const workLatLng = new google.maps.LatLng(obj.work.latitude, obj.work.longitude);
 
-    if (swapDirections === false) {
-      directionsService
-        .route({
-          origin: homeLatLng,
-          destination: workLatLng,
-          provideRouteAlternatives: true,
-          travelMode: selectedMode,
-          optimizeWaypoints: true,
-          transitOptions: {
-            departureTime: calculateDate(),
-            // routingPreference: 'LESS_WALKING'
-          },
-          unitSystem: google.maps.UnitSystem.IMPERIAL
-        })
-        .then((response) => {
-          directionsRenderer.setDirections(response);
-        })
-        .catch((e) => window.alert("Directions request failed due to " + e));
-    } else if (swapDirections == true) {
-      directionsService
-        .route({
-          origin: workLatLng,
-          destination: homeLatLng,
-          provideRouteAlternatives: true,
-          travelMode: selectedMode,
-          optimizeWaypoints: true,
-          transitOptions: {
-            departureTime: calculateDate(),
-            // routingPreference: 'LESS_WALKING'
-          },
-          unitSystem: google.maps.UnitSystem.IMPERIAL
-        })
-        .then((response) => {
-          directionsRenderer.setDirections(response);
-        })
-        .catch((e) => window.alert("Directions request failed due to " + e));
-    }
+    const request = {
+      origin: swapDirections ? workLatLng : homeLatLng,
+      destination: swapDirections ? homeLatLng : workLatLng,
+      provideRouteAlternatives: true,
+      travelMode: selectedMode,
+      optimizeWaypoints: true,
+      transitOptions: {
+        departureTime: calculateDate(),
+        // routingPreference: 'LESS_WALKING'
+      },
+      unitSystem: google.maps.UnitSystem.IMPERIAL
+    };
+
+    directionsService.route(request)
+      .then((response) => {
+        directionsRenderer.setDirections(response);
+      })
+      .catch((e) => window.alert("Directions request failed due to " + e));
   });
 }
-
-// async function nearbySearch() {
-//   //@ts-ignore
-//   const { Place, SearchNearbyRankPreference } = await google.maps.importLibrary(
-//     "places",
-//   );
-//   const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
-//   // Restrict within the map viewport.
-//   let center = new google.maps.LatLng(52.369358, 4.889258);
-//   const request = {
-//     // required parameters
-//     fields: ["displayName", "location", "businessStatus"],
-//     locationRestriction: {
-//       center: center,
-//       radius: 500,
-//     },
-//     // optional parameters
-//     includedPrimaryTypes: ["restaurant"],
-//     maxResultCount: 5,
-//     rankPreference: SearchNearbyRankPreference.POPULARITY,
-//     language: "en-US",
-//     region: "us",
-//   };
-//   //@ts-ignore
-//   const { places } = await Place.searchNearby(request);
-
-//   if (places.length) {
-//     console.log(places);
-
-//     const { LatLngBounds } = await google.maps.importLibrary("core");
-//     const bounds = new LatLngBounds();
-
-//     // Loop through and get all the results.
-//     places.forEach((place) => {
-//       const markerView = new AdvancedMarkerElement({
-//         map,
-//         position: place.location,
-//         title: place.displayName,
-//       });
-
-//       bounds.extend(place.location);
-//       console.log(place);
-//     });
-//     map.fitBounds(bounds);
-//   } else {
-//     console.log("No results");
-//   }
-// }
-
-// function createMarker(place, map) {
-//   const marker = new google.maps.Marker({
-//     map: map,
-//     position: place.geometry.location
-//   });
-
-//   google.maps.event.addListener(marker, 'click', () => {
-//     const infowindow = new google.maps.InfoWindow({
-//       content: place.name
-//     });
-//     infowindow.open(map, marker);
-//   });
-// }
 
 window.initMap = initMap;
