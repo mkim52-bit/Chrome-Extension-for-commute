@@ -62,18 +62,15 @@ function calculateDate() {
 
 function calculateAndDisplayRoute(directionsService, directionsRenderer, swapDirections) {
   const selectedMode = document.getElementById("mode").value;
-  chrome.storage.local.get(["home", "work"], function (obj) {
+  chrome.storage.sync.get(["home", "work"], function (obj) {
     if (obj.home === obj.work) {
       window.alert("Home and work cannot be the same");
       return;
     }
 
-    const homeLatLng = new google.maps.LatLng(obj.home.latitude, obj.home.longitude);
-    const workLatLng = new google.maps.LatLng(obj.work.latitude, obj.work.longitude);
-
     const request = {
-      origin: swapDirections ? workLatLng : homeLatLng,
-      destination: swapDirections ? homeLatLng : workLatLng,
+      origin: swapDirections ? obj.work : obj.home,
+      destination: swapDirections ? obj.home : obj.work,
       provideRouteAlternatives: true,
       travelMode: selectedMode,
       optimizeWaypoints: true,
