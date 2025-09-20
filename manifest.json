@@ -1,0 +1,35 @@
+{
+  "name": "Destination",
+  "description": "Highlight text to see destination",
+  "version": "1.0",
+  "manifest_version": 3,
+  "icons": {
+    "32": "searching.png"
+  },
+  "permissions": [
+    "storage",
+    "notifications",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "eventPage.js"
+  },
+  "options_page": "options.html",
+  "action": {
+    "default_icon": "directions.png",
+    "default_popup": "popup.html"
+  },
+  "content_security_policy": {
+    "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com; child-src 'self';"
+  },
+  "sandbox": {
+    "pages": ["sandbox-maps.html"]
+  },
+  "content_scripts": [{
+    "matches": ["http://*/*", "https://*/*"],
+    "js": ["content.js"]
+  }]
+}

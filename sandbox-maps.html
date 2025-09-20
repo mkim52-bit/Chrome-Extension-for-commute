@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        /* Container for vertical layout */
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+        }
+        
+        /* Map takes up top portion */
+        #map {
+            width: 100%;
+            flex: 1;
+            min-height: 50%;
+        }
+        
+        /* Directions panel below the map */
+        #directionsPanel {
+            width: 100%;
+            height: 40%;
+            overflow-y: auto;
+            background: white;
+            border-top: 2px solid #e0e0e0;
+            box-sizing: border-box;
+            display: none;
+        }
+        
+        #directionsPanel.active {
+            display: block;
+        }
+        
+        /* When directions are shown, adjust map height */
+        .container.with-directions #map {
+            height: 60%;
+            flex: none;
+        }
+        
+        /* Google Maps directions styling */
+        .adp-directions {
+            width: 100%;
+        }
+        
+        .adp-placemark {
+            background: #4285f4;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .adp-summary {
+            padding: 10px;
+            background: #f5f5f5;
+            border-bottom: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="container">
+        <div id="map"></div>
+        <div id="directionsPanel"></div>
+    </div>
+    
+    <script>
+        let map;
+        let directionsService;
+        let directionsRenderer;
+        let currentRoute = null;
+        
+        function initMap() {
+            // Initialize map centered on NYC by default
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 40.7128, lng: -74.0060 },
+                zoom: 13,
+                mapTypeControl: true,
+                mapTypeControlOptions: {
+                    style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+                }
+            });
+            
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer({
+                map: map,
+                panel: document.getElementById('directionsPanel')
+            });
+            
+            // Listen for messages from parent
+            window.addEventListener('message', handleParentMessage);
+            
+            // Tell parent we're ready
+            window.parent.postMessage({ type: 'mapReady' }, '*');
+        }
+        
+        function handleParentMessage(event) {
+            const data = event.data;
+            
+            switch(data.type) {
+                case 'calculateRoute':
+                    calculateRoute(data);
+                    break;
+                case 'updateMode':
+                    if (currentRoute) {
+                        currentRoute.mode = data.mode;
+                        calculateRoute(currentRoute);
+                    }
+                    break;
+                case 'swapDirections':
+                    if (currentRoute) {
+                        const temp = currentRoute.origin;
+                        currentRoute.origin = currentRoute.destination;
+                        currentRoute.destination = temp;
+                        calculateRoute(currentRoute);
+                    }
+                    break;
+            }
+        }
+        
+        function calculateRoute(data) {
+            // Store current route for updates
+            currentRoute = data;
+            
+            // Show directions panel and adjust layout
+            document.getElementById('directionsPanel').classList.add('active');
+            document.getElementById('container').classList.add('with-directions');
+            
+            // Build the request
+            const request = {
+                origin: data.origin || 'Times Square, NY',
+                destination: data.destination || 'Central Park, NY',
+                travelMode: google.maps.TravelMode[data.mode] || google.maps.TravelMode.TRANSIT
+            };
+            
+            // Add transit-specific options
+            if (request.travelMode === google.maps.TravelMode.TRANSIT && data.departureTime) {
+                const departureDate = new Date();
+                if (data.departureTime) {
+                    const [hours, minutes] = data.departureTime.split(':');
+                    departureDate.setHours(parseInt(hours), parseInt(minutes), 0);
+                }
+                
+                request.transitOptions = {
+                    departureTime: departureDate,
+                    modes: ['BUS', 'RAIL', 'SUBWAY', 'TRAIN', 'TRAM'],
+                    routingPreference: 'FEWER_TRANSFERS'
+                };
+            }
+            
+            // Add driving options if driving mode
+            if (request.travelMode === google.maps.TravelMode.DRIVING) {
+                request.drivingOptions = {
+                    departureTime: new Date(),
+                    trafficModel: 'bestguess'
+                };
+            }
+            
+            // Make the directions request
+            directionsService.route(request, function(result, status) {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(result);
+                    
+                    // Resize map after directions are rendered
+                    setTimeout(() => {
+                        google.maps.event.trigger(map, 'resize');
+                    }, 100);
+                    
+                    // Extract detailed route information
+                    const route = result.routes[0];
+                    const leg = route.legs[0];
+                    
+                    let transitDetails = null;
+                    if (request.travelMode === google.maps.TravelMode.TRANSIT) {
+                        transitDetails = extractTransitDetails(leg);
+                    }
+                    
+                    // Send detailed route info back to parent
+                    window.parent.postMessage({
+                        type: 'routeCalculated',
+                        route: {
+                            distance: leg.distance.text,
+                            duration: leg.duration.text,
+                            start_address: leg.start_address,
+                            end_address: leg.end_address,
+                            departure_time: leg.departure_time ? leg.departure_time.text : null,
+                            arrival_time: leg.arrival_time ? leg.arrival_time.text : null,
+                            transit: transitDetails,
+                            warnings: route.warnings,
+                        }
+                    }, '*');
+                } else {
+                    handleDirectionsError(status);
+                }
+            });
+        }
+        
+        function extractTransitDetails(leg) {
+            const transitSteps = [];
+            
+            leg.steps.forEach(step => {
+                if (step.travel_mode === 'TRANSIT') {
+                    const transitDetail = step.transit;
+                    transitSteps.push({
+                        line: transitDetail.line.name || transitDetail.line.short_name,
+                        vehicle: transitDetail.line.vehicle.name,
+                        departure_stop: transitDetail.departure_stop.name,
+                        arrival_stop: transitDetail.arrival_stop.name,
+                        departure_time: transitDetail.departure_time.text,
+                        arrival_time: transitDetail.arrival_time.text,
+                        num_stops: transitDetail.num_stops,
+                        headsign: transitDetail.headsign
+                    });
+                }
+            });
+            
+            return transitSteps;
+        }
+        
+        function handleDirectionsError(status) {
+            let errorMessage = 'Directions request failed: ' + status;
+            
+            switch(status) {
+                case 'NOT_FOUND':
+                    errorMessage = 'One or more locations could not be found.';
+                    break;
+                case 'ZERO_RESULTS':
+                    errorMessage = 'No route could be found between the origin and destination.';
+                    break;
+                case 'REQUEST_DENIED':
+                    errorMessage = 'The directions request was denied. Please check your API key.';
+                    break;
+                case 'OVER_QUERY_LIMIT':
+                    errorMessage = 'Too many requests. Please try again later.';
+                    break;
+            }
+            
+            // Hide directions panel on error
+            document.getElementById('directionsPanel').classList.remove('active');
+            document.getElementById('container').classList.remove('with-directions');
+            
+            window.parent.postMessage({
+                type: 'routeError',
+                error: errorMessage
+            }, '*');
+        }
+        
+        // Handle authentication failures
+        window.gm_authFailure = function() {
+            window.parent.postMessage({
+                type: 'mapError',
+                error: 'Google Maps authentication failed. Please check your API key.'
+            }, '*');
+        };
+    </script>
+    
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&libraries=places&callback=initMap">
+    </script>
+</body>
+</html>
